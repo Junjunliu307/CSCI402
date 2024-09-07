@@ -7,20 +7,20 @@ FILES_TO_BACKUP = my402list.c
 BACKUP_FNAME = warmup1-A-backup-`date +%d%b%Y-%H%M%S`.tar.gz
 BACKUP_DIR = $(HOME)/Shared-ubuntu
 
-warmup1: my402list.o
-	gcc -g -Wall -o warmup1 my402list.o
+# warmup1: my402list.o
+# 	gcc -g -Wall -o warmup1 my402list.o
 
-listtest: listtest.o my402list.o
-	gcc -o listtest -g listtest.o my402list.o
+warmup1: warmup1.o my402list.o
+	gcc -o warmup1 -g warmup1.o my402list.o
 
-listtest.o: listtest.c my402list.h
-	gcc -g -c -Wall listtest.c
+warmup1.o: warmup1.c my402list.h
+	gcc -g -c -Wall warmup1.c
 
-my402list.o: my402list.c my402list.h cs402.h
+my402list.o: my402list.c my402list.h
 	gcc -g -c -Wall my402list.c
 
 clean:
-	rm -f *.o listtest warmup1
+	rm -f *.o warmup1
 
 backup:
 	# only backup "my402list.c" since this Makefile is for part (A) of the grading guidelines
