@@ -149,6 +149,7 @@ typedef struct {
 char* formatDate(int timestamp);
 void formatAmount(char* buffer, double amount);
 void formatBalance(char* buffer, double balance);
+void formatDouble(char* buffer, double num);
 
 int main(int argc, char *argv[]) {
     My402List transactionList;
@@ -168,29 +169,34 @@ int main(int argc, char *argv[]) {
     while (fgets(line, sizeof(line), inputFile)) {
         Transaction *trans = (Transaction *)malloc(sizeof(Transaction));
         if (sscanf(line, "%c\t%d\t%lf\t%[^\n]", &sign, &trans->timestamp, &trans->amount, trans->description) == 4) {
-            // 如果是取款，则将金额转换为负数
             if (sign == '-') {
                 trans->amount = -trans->amount;
+            } else if(sign == '+'){
+                trans->amount = trans->amount;
+            }else{
+                fprintf(stderr, "Error: malformed line\n");
+                exit(EXIT_FAILURE);
             }
 
-            // 寻找插入位置，按时间戳升序插入
             My402ListElem *elem = NULL;
             for (elem = My402ListFirst(&transactionList); elem != NULL; elem = My402ListNext(&transactionList, elem)) {
                 Transaction *currentTrans = (Transaction *)elem->obj;
                 if (trans->timestamp < currentTrans->timestamp) {
-                    break;  // 找到比当前交易时间戳大的位置
+                    break;
                 }
             }
             if (elem == NULL) {
-                My402ListAppend(&transactionList, trans);  // 如果没有找到比它大的，直接插入末尾
+                My402ListAppend(&transactionList, trans);
             } else {
-                My402ListInsertBefore(&transactionList, trans, elem);  // 否则插入该节点之前
+                My402ListInsertBefore(&transactionList, trans, elem);
             }
+        }else{
+            fprintf(stderr, "Error: malformed line\n");
+            exit(EXIT_FAILURE);
         }
     }
     fclose(inputFile);
 
-    // 打印表头
     printf("+-----------------+--------------------------+----------------+----------------+\n");
     printf("|       Date      | Description              |         Amount |        Balance |\n");
     printf("+-----------------+--------------------------+----------------+----------------+\n");
@@ -202,17 +208,15 @@ int main(int argc, char *argv[]) {
         balance += trans->amount;
 
         char date[32], amount[16], balance_str[16], description[25];
-        strncpy(description, trans->description, 24);  // 截断描述，确保不超过24字符
-        description[24] = '\0';  // 确保字符串以'\0'结束
+        strncpy(description, trans->description, 24);
+        description[24] = '\0';
         
-        // 如果描述不足24字符，补齐空格
         int len = strlen(description);
         for (int i = len; i < 24; i++) {
             description[i] = ' ';
         }
         description[24] = '\0';
 
-        // 格式化日期、金额和余额
         formatAmount(amount, trans->amount);
         formatBalance(balance_str, balance);
 
@@ -226,7 +230,6 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-// 格式化日期
 char* formatDate(int timestamp) {
     static char buffer[32];
     struct tm *tm_info;
@@ -236,32 +239,91 @@ char* formatDate(int timestamp) {
     return buffer;
 }
 
-// 格式化金额
 void formatAmount(char* buffer, double amount) {
     if (amount >= 10000000 || amount <= -10000000) {
-        // 金额超过限制，显示为 ?,???,???.??
-        snprintf(buffer, 16, "?,???,???.??");
-    } else {
-        // 正常格式化金额
         if (amount < 0) {
-            snprintf(buffer, 16, "(%10.2f)", -amount);
+            snprintf(buffer, 16, "(?,???,???.??)");
         } else {
-            snprintf(buffer, 16, "%10.2f", amount);
+            snprintf(buffer, 16, " ?,???,???.?? ");
+        }
+    } else {
+        if (amount < 0) {
+            formatDouble(buffer,-amount);
+            char temp[32]; 
+            strcpy(temp, buffer);
+            int blankLength = 14 - strlen(temp) - 2;
+            snprintf(buffer, 16, "(%*s%s)",blankLength," ", temp);
+        } else {
+            formatDouble(buffer,amount);
+            char temp[32]; 
+            strcpy(temp, buffer);
+            snprintf(buffer, 16, " %s ", temp);
         }
     }
 }
 
-// 格式化余额
 void formatBalance(char* buffer, double balance) {
     if (balance >= 10000000 || balance <= -10000000) {
-        // 余额超过限制，显示为 ?,???,???.??
         snprintf(buffer, 16, "?,???,???.??");
     } else {
-        // 正常格式化余额
         if (balance < 0) {
-            snprintf(buffer, 16, "(%10.2f)", -balance);
+            formatDouble(buffer,-balance);
+            char temp[32]; 
+            strcpy(temp, buffer);
+            int blankLength = 14 - strlen(temp) - 2;
+            snprintf(buffer, 16, "(%*s%s)",blankLength," ", temp);
         } else {
-            snprintf(buffer, 16, "%10.2f", balance);
+            formatDouble(buffer,balance);
+            char temp[32]; 
+            strcpy(temp, buffer);
+            snprintf(buffer, 16, " %s ", temp);
         }
     }
+}
+
+// Helper function to reverse a string
+void reverse(char* str) {
+    int len = strlen(str);
+    for (int i = 0; i < len / 2; i++) {
+        char temp = str[i];
+        str[i] = str[len - i - 1];
+        str[len - i - 1] = temp;
+    }
+}
+
+// Function to format a double number into "1,333.02" format
+void formatDouble(char* buffer, double num) {
+    // Split the number into integer and decimal parts
+    int int_part = (int)num;  // Get the integer part
+    double decimal_part = num - int_part;  // Get the decimal part
+    
+    // Create a temporary buffer to store the integer part with commas
+    char temp[32];
+    int index = 0;
+    int count = 0;
+    
+    // Handle the integer part and add commas
+    while (int_part > 0) {
+        if (count > 0 && count % 3 == 0) {
+            temp[index++] = ',';
+        }
+        temp[index++] = '0' + (int_part % 10);
+        int_part /= 10;
+        count++;
+    }
+    
+    if (index == 0) {
+        temp[index++] = '0';  // In case the number is zero
+    }
+    
+    temp[index] = '\0';
+    reverse(temp);  // Reverse the string to get the correct order
+
+    // Write the integer part to the buffer
+    strcpy(buffer, temp);
+    
+    // Format the decimal part to two digits
+    char decimal_str[10];
+    sprintf(decimal_str, "%.2f", decimal_part);  // Format the decimal part
+    strcat(buffer, decimal_str + 1);  // Skip the leading '0' in the decimal part
 }
