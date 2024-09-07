@@ -7,9 +7,6 @@ FILES_TO_BACKUP = my402list.c
 BACKUP_FNAME = warmup1-A-backup-`date +%d%b%Y-%H%M%S`.tar.gz
 BACKUP_DIR = $(HOME)/Shared-ubuntu
 
-# warmup1: my402list.o
-# 	gcc -g -Wall -o warmup1 my402list.o
-
 warmup1: warmup1.o my402list.o
 	gcc -o warmup1 -g warmup1.o my402list.o
 
