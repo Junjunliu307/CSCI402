@@ -44,8 +44,18 @@ int main(int argc, char *argv[]) {
     }
 
     char line[1024];
+    char tempBuffer[1024];
     char sign;
     while (fgets(line, sizeof(line), inputFile)) {
+        // Check if the line exceeds 1024 characters
+        if (line[strlen(line) - 1] != '\n' && !feof(inputFile)) {
+            // Skip remaining characters of the long line
+            while (fgets(tempBuffer, sizeof(tempBuffer), inputFile) && tempBuffer[strlen(tempBuffer) - 1] != '\n');
+        
+            fprintf(stderr, "Error: Line exceeds 1024 characters\n");
+            fclose(inputFile);
+            return 1;
+        }
         Transaction *trans = (Transaction *)malloc(sizeof(Transaction));
         if (sscanf(line, "%c\t%d\t%lf\t%[^\n]", &sign, &trans->timestamp, &trans->amount, trans->description) == 4) {
             if (sign == '-') {
@@ -56,19 +66,6 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Error: malformed line\n");
                 exit(EXIT_FAILURE);
             }
-
-            // My402ListElem *elem = NULL;
-            // for (elem = My402ListFirst(&transactionList); elem != NULL; elem = My402ListNext(&transactionList, elem)) {
-            //     Transaction *currentTrans = (Transaction *)elem->obj;
-            //     if (trans->timestamp < currentTrans->timestamp) {
-            //         break;
-            //     }
-            // }
-            // if (elem == NULL) {
-            //     My402ListAppend(&transactionList, trans);
-            // } else {
-            //     My402ListInsertBefore(&transactionList, trans, elem);
-            // }
             My402ListAppend(&transactionList, trans);
         }else{
             fprintf(stderr, "Error: malformed line\n");
@@ -92,7 +89,7 @@ int main(int argc, char *argv[]) {
         Transaction *trans = (Transaction *)elem->obj;
         balance += trans->amount;
 
-        char date[32], amount[16], balance_str[16], description[25];
+        char amount[16], balance_str[16], description[25];
         strncpy(description, trans->description, 24);
         description[24] = '\0';
         
