@@ -7,10 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/time.h>
+#include <time.h>
 #include <stdbool.h>
 #include "cs402.h"
-
 #include "my402list.h"
 
 typedef struct {
@@ -37,21 +36,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // FILE *inputFile = fopen(argv[2], "r");
-    // if (inputFile == NULL) {
-    //     fprintf(stderr, "Error: Could not open input file\n");
-    //     return 1;
-    // }
     FILE *inputFile;
     if (argc > 2) {
-        // 如果提供了文件路径，打开文件
         inputFile = fopen(argv[2], "r");
         if (inputFile == NULL) {
             fprintf(stderr, "Error: Could not open input file: %s\n", argv[2]);
             return 1;
         }
     } else {
-        // 如果没有提供文件路径，从标准输入读取数据
         inputFile = stdin;
     }
 
