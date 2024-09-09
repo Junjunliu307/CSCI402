@@ -37,10 +37,22 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    FILE *inputFile = fopen("test.tfile", "r");
-    if (inputFile == NULL) {
-        fprintf(stderr, "Error: Could not open input file\n");
-        return 1;
+    // FILE *inputFile = fopen(argv[2], "r");
+    // if (inputFile == NULL) {
+    //     fprintf(stderr, "Error: Could not open input file\n");
+    //     return 1;
+    // }
+    FILE *inputFile;
+    if (argc > 2) {
+        // 如果提供了文件路径，打开文件
+        inputFile = fopen(argv[2], "r");
+        if (inputFile == NULL) {
+            fprintf(stderr, "Error: Could not open input file: %s\n", argv[2]);
+            return 1;
+        }
+    } else {
+        // 如果没有提供文件路径，从标准输入读取数据
+        inputFile = stdin;
     }
 
     char line[1024];
@@ -133,7 +145,6 @@ void BubbleSortForwardList(My402List *pList, int num_items) {
             if (next_elem != NULL) {
                 next_trans = (Transaction *)(next_elem->obj);
 
-                // 比较时间戳
                 if (cur_trans->timestamp > next_trans->timestamp) {
                     BubbleForward(pList, &elem, &next_elem);
                     something_swapped = TRUE;
@@ -169,12 +180,19 @@ void BubbleForward(My402List *pList, My402ListElem **pp_elem1, My402ListElem **p
 }
 
 char* formatDate(int timestamp) {
-    static char buffer[32];
-    struct tm *tm_info;
-    time_t time = (time_t)timestamp;
-    tm_info = localtime(&time);
-    strftime(buffer, sizeof(buffer), "%a %b %d %Y", tm_info);
-    return buffer;
+    static char formattedDate[32]; // buffer to store the formatted date
+    char *ctimeStr;
+    
+    time_t rawtime = (time_t)timestamp;
+    ctimeStr = ctime(&rawtime); // get ctime string
+
+    // Remove the newline character at the end of ctime output
+    ctimeStr[strlen(ctimeStr) - 1] = '\0';
+
+    // Format the string to remove extra space before day if it's a single digit
+    sprintf(formattedDate, "%.3s %.3s %.2s %.4s", ctimeStr, ctimeStr + 4, ctimeStr + 8, ctimeStr + 20);
+
+    return formattedDate;
 }
 
 void formatAmount(char* buffer, double amount) {
@@ -229,39 +247,39 @@ void reverse(char* str) {
     }
 }
 
-// Function to format a double number into "1,333.02" format
 void formatDouble(char* buffer, double num) {
-    // Split the number into integer and decimal parts
-    int int_part = (int)num;  // Get the integer part
-    double decimal_part = num - int_part;  // Get the decimal part
+    int int_part = (int)num;  // Integer part
+    int decimal_part = (int)round((num - int_part) * 100);  // Two decimal places, rounded
     
-    // Create a temporary buffer to store the integer part with commas
+    if (decimal_part == 100){
+        int_part += 1;
+        decimal_part = 0;
+    }
+
     char temp[32];
     int index = 0;
     int count = 0;
-    
+
     // Handle the integer part and add commas
-    while (int_part > 0) {
-        if (count > 0 && count % 3 == 0) {
-            temp[index++] = ',';
+    if (int_part == 0) {
+        temp[index++] = '0';  // If the integer part is 0, ensure we print '0'
+    } else {
+        while (int_part > 0) {
+            if (count > 0 && count % 3 == 0) {
+                temp[index++] = ',';
+            }
+            temp[index++] = '0' + (int_part % 10);
+            int_part /= 10;
+            count++;
         }
-        temp[index++] = '0' + (int_part % 10);
-        int_part /= 10;
-        count++;
-    }
-    
-    if (index == 0) {
-        temp[index++] = '0';  // In case the number is zero
     }
     
     temp[index] = '\0';
     reverse(temp);  // Reverse the string to get the correct order
+    strcpy(buffer, temp);  // Write the integer part to the buffer
 
-    // Write the integer part to the buffer
-    strcpy(buffer, temp);
-    
-    // Format the decimal part to two digits
+    // Format the decimal part with exactly two digits
     char decimal_str[10];
-    sprintf(decimal_str, "%.2f", decimal_part);  // Format the decimal part
-    strcat(buffer, decimal_str + 1);  // Skip the leading '0' in the decimal part
+    snprintf(decimal_str, sizeof(decimal_str), ".%02d", decimal_part);  // Ensure two decimal places
+    strcat(buffer, decimal_str);  // Concatenate decimal part to the buffer
 }
