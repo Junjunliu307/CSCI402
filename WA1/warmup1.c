@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Error: Could not open input file: %s\n", argv[2]);
             return 1;
         }
-    } else {
+    }else {
         inputFile = stdin;
     }
 
@@ -140,6 +140,9 @@ void BubbleSortForwardList(My402List *pList, int num_items) {
                 if (cur_trans->timestamp > next_trans->timestamp) {
                     BubbleForward(pList, &elem, &next_elem);
                     something_swapped = TRUE;
+                }else if(cur_trans->timestamp == next_trans->timestamp) {
+                    fprintf(stderr, "Error: Duplicate timestamp found: %d\n", cur_trans->timestamp);
+                    exit(EXIT_FAILURE);
                 }
             }
         }

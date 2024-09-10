@@ -9,7 +9,7 @@ Replace "(Comments?)" below with the command the grader should use to compile
 your program (it should simply be "make" or "make warmup1"; minor variation is
 also fine).
 
-    To compile your code, the grader should type: (./do-this-first.csh)
+    To compile your code, the grader should type: (make warmup1)
 
 If you have additional instruction for the grader, replace "(Comments?)" with your
 instruction (or with the word "none" if you don't have additional instructions):
