@@ -193,7 +193,7 @@ char* formatDate(int timestamp) {
 void formatAmount(char* buffer, double amount) {
     if (amount >= 10000000 || amount <= -10000000) {
         if (amount < 0) {
-            snprintf(buffer, 16, "(?,???,???.??)");
+            snprintf(buffer, 16, "(\\?,\\?\\?,\\?\\?.\\?\\?)");
         } else {
             snprintf(buffer, 16, " ?,???,???.?? ");
         }
