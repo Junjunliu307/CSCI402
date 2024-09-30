@@ -18,7 +18,7 @@ double total_time_in_Q2 = 0.0;
 double total_time_in_S1 = 0.0;
 double total_time_in_S2 = 0.0;
 double total_time_in_system = 0.0;
-double total_system_time_squared = 0.0;  // 用于计算系统内时间的方差
+double total_system_time_squared = 0.0;
 
 int total_packets_arrived = 0;
 int total_packets_served = 0;
@@ -51,7 +51,7 @@ pthread_mutex_t queue_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // Global parameters
 double lambda = 1.0;
-double mu = 0.35;
+double mu = 0.3;
 double r = 1.5;
 int B = 10;
 int P = 3;
@@ -72,36 +72,33 @@ double get_elapsed_time_in_ms(struct timeval *start, struct timeval *end);
 void print_statistics();
 
 int main(int argc, char *argv[]) {
-    int opt;
 
-    // Command-line parsing
-    while ((opt = getopt(argc, argv, "l:m:r:B:P:n:t:")) != -1) {
-        switch (opt) {
-            case 'l':
-                lambda = atof(optarg);
-                break;
-            case 'm':
-                mu = atof(optarg);
-                break;
-            case 'r':
-                r = atof(optarg);
-                break;
-            case 'B':
-                B = atoi(optarg);
-                break;
-            case 'P':
-                P = atoi(optarg);
-                break;
-            case 'n':
-                num_packets = atoi(optarg);
-                break;
-            case 't':
-                strncpy(tracefile, optarg, sizeof(tracefile) - 1);
-                deterministic_mode = 0;  // Switch to trace-driven mode
-                break;
-            default:
-                fprintf(stderr, "Usage: %s [-lambda lambda] [-mu mu] [-r r] [-B B] [-P P] [-n num] [-t tsfile]\n", argv[0]);
-                exit(EXIT_FAILURE);
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-lambda") == 0 && i + 1 < argc) {
+            lambda = atof(argv[i + 1]);
+            i++; 
+        } else if (strcmp(argv[i], "-mu") == 0 && i + 1 < argc) {
+            mu = atof(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-r") == 0 && i + 1 < argc) {
+            r = atof(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-B") == 0 && i + 1 < argc) {
+            B = atoi(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-P") == 0 && i + 1 < argc) {
+            P = atoi(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
+            num_packets = atoi(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) {
+            strncpy(tracefile, argv[i + 1], sizeof(tracefile) - 1);
+            deterministic_mode = 0;  // Switch to trace-driven mode
+            i++;
+        } else {
+            fprintf(stderr, "Usage: %s [-lambda lambda] [-mu mu] [-r r] [-B B] [-P P] [-n num] [-t tsfile]\n", argv[0]);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -164,7 +161,7 @@ int main(int argc, char *argv[]) {
 
     // After packet thread completes, mark emulation as finished
     pthread_mutex_lock(&queue_lock);
-    is_emulation_finished = 1;
+    is_emulation_finished = 1; 
     pthread_mutex_unlock(&queue_lock);
 
     // Wait for the other threads to complete
@@ -203,7 +200,7 @@ void *packet_arrival_thread(void *param) {
         double inter_arrival_time = get_elapsed_time_in_ms(&last_arrival_time, &packet->arrival_time);
         last_arrival_time = packet->arrival_time;
 
-        total_inter_arrival_time += inter_arrival_time;  // 收集到达时间
+        total_inter_arrival_time += inter_arrival_time;
         total_packets_arrived++;
 
         printf("%08.3fms: p%d arrives, needs %d tokens, inter-arrival time = %.3fms\n",
@@ -288,12 +285,6 @@ void *server_thread(void *param) {
                    get_elapsed_time_in_ms(&emulation_start, &begin_service_time),
                    packet->id, (long)server_id, packet->service_time_ms);
 
-            if (server_id == 1) {
-                total_time_in_S1 += get_elapsed_time_in_ms(&begin_service_time, &packet->depart_time);
-            } else {
-                total_time_in_S2 += get_elapsed_time_in_ms(&begin_service_time, &packet->depart_time);
-            }
-
             pthread_mutex_unlock(&queue_lock);
 
             usleep(packet->service_time_ms * 1000);
@@ -305,20 +296,15 @@ void *server_thread(void *param) {
                    get_elapsed_time_in_ms(&begin_service_time, &depart_time),
                    get_elapsed_time_in_ms(&packet->arrival_time, &depart_time));
 
-            double time_in_system = get_elapsed_time_in_ms(&packet->arrival_time, &depart_time);
-            total_time_in_system += time_in_system;
-            total_system_time_squared += time_in_system * time_in_system;
-
-            total_service_time += get_elapsed_time_in_ms(&begin_service_time, &depart_time);  // 记录服务时间
-            total_packets_served++;
             free(packet);
         } else {
             pthread_mutex_unlock(&queue_lock);
-            usleep(1000);  // Sleep briefly if no packets to serve
+            usleep(1000);  // 如果没有包可处理，线程短暂休眠
         }
     }
     return NULL;
 }
+
 // Parse the trace file for trace-driven mode
 void parse_trace_file(const char *filename) {
     FILE *file = fopen(filename, "r");
