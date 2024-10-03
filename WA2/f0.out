@@ -4,101 +4,106 @@ Emulation Parameters:
     B = 3
     P = 3
     tsfile = w2data/f0.txt
+
 00000000.000ms: emulation begins
-00000226.340ms: p1 arrives, needs 3 tokens, inter-arrival time = 226.340ms
-00000226.340ms: p1 enters Q1
-00000671.909ms: token t1 arrives, token bucket now has 1 token
-00001343.495ms: token t2 arrives, token bucket now has 2 tokens
-00002013.790ms: token t3 arrives, token bucket now has 3 tokens
-00002013.809ms: p1 leaves Q1, time in Q1 = 1787.469ms, token bucket now has 0 token
-00002013.819ms: p1 enters Q2
-00002014.244ms: p1 leaves Q2, time in Q2 = 0.425ms
-00002014.262ms: p1 begins service at S2, requesting 153ms of service
-00002170.552ms: p1 departs from S2, service time = 156.290ms, time in system = 1944.212ms
-00002419.701ms: p2 arrives, needs 1 tokens, inter-arrival time = 2193.361ms
-00002419.701ms: p2 enters Q1
-00002683.954ms: token t4 arrives, token bucket now has 1 token
-00002683.974ms: p2 leaves Q1, time in Q1 = 264.273ms, token bucket now has 0 token
-00002683.983ms: p2 enters Q2
-00002685.013ms: p2 leaves Q2, time in Q2 = 1.030ms
-00002685.069ms: p2 begins service at S1, requesting 3741ms of service
-00003351.403ms: token t5 arrives, token bucket now has 1 token
-00004018.326ms: token t6 arrives, token bucket now has 2 tokens
-00004686.038ms: token t7 arrives, token bucket now has 3 tokens
-00004771.859ms: p3 arrives, needs 2 tokens, inter-arrival time = 2352.158ms
-00004771.859ms: p3 enters Q1
-00005354.257ms: token t8 arrives, dropped
-00005354.269ms: p3 leaves Q1, time in Q1 = 582.410ms, token bucket now has 1 token
-00005354.277ms: p3 enters Q2
-00005355.376ms: p3 leaves Q2, time in Q2 = 1.099ms
-00005355.380ms: p3 begins service at S2, requesting 228ms of service
-00005587.852ms: p3 departs from S2, service time = 232.472ms, time in system = 815.993ms
-00006021.405ms: token t9 arrives, token bucket now has 2 tokens
-00006428.580ms: p2 departs from S1, service time = 3743.511ms, time in system = 4008.879ms
-00006430.887ms: p4 arrives, needs 4 tokens, inter-arrival time = 1659.03ms, dropped
-00006689.436ms: token t10 arrives, token bucket now has 3 tokens
-00007358.977ms: token t11 arrives, dropped
-00008026.936ms: token t12 arrives, dropped
-00008184.516ms: p5 arrives, needs 6 tokens, inter-arrival time = 1753.63ms, dropped
-00008298.038ms: p6 arrives, needs 7 tokens, inter-arrival time = 113.522ms, dropped
-00008698.624ms: token t13 arrives, dropped
-00009369.479ms: token t14 arrives, dropped
-00009819.082ms: p7 arrives, needs 1 tokens, inter-arrival time = 1521.044ms
-00009819.082ms: p7 enters Q1
-00010036.335ms: token t15 arrives, dropped
-00010036.339ms: p7 leaves Q1, time in Q1 = 217.257ms, token bucket now has 2 tokens
-00010036.352ms: p7 enters Q2
-00010036.844ms: p7 leaves Q2, time in Q2 = 0.492ms
-00010036.846ms: p7 begins service at S2, requesting 5437ms of service
-00010708.012ms: token t16 arrives, token bucket now has 3 tokens
-00011379.686ms: token t17 arrives, dropped
-00012048.332ms: token t18 arrives, dropped
-00012719.111ms: token t19 arrives, dropped
-00013390.789ms: token t20 arrives, dropped
-00014060.746ms: token t21 arrives, dropped
-00014729.886ms: token t22 arrives, dropped
-00015399.470ms: token t23 arrives, dropped
-00015478.758ms: p7 departs from S2, service time = 5441.912ms, time in system = 5659.676ms
-00016066.677ms: token t24 arrives, dropped
-00016736.127ms: token t25 arrives, dropped
-00017404.971ms: token t26 arrives, dropped
-00018056.983ms: p8 arrives, needs 2 tokens, inter-arrival time = 8237.901ms
-00018056.983ms: p8 enters Q1
-00018075.559ms: token t27 arrives, dropped
-00018075.571ms: p8 leaves Q1, time in Q1 = 18.588ms, token bucket now has 1 token
-00018075.620ms: p8 enters Q2
-00018075.891ms: p8 leaves Q2, time in Q2 = 0.271ms
-00018075.895ms: p8 begins service at S2, requesting 8007ms of service
-00018743.696ms: token t28 arrives, token bucket now has 2 tokens
-00019034.273ms: p9 arrives, needs 4 tokens, inter-arrival time = 977.29ms, dropped
-00019410.486ms: token t29 arrives, token bucket now has 3 tokens
-00020078.234ms: token t30 arrives, dropped
-00020745.110ms: token t31 arrives, dropped
-00021416.765ms: token t32 arrives, dropped
-00022087.777ms: token t33 arrives, dropped
-00022759.477ms: token t34 arrives, dropped
-00023430.919ms: token t35 arrives, dropped
-00024101.634ms: token t36 arrives, dropped
-00024768.963ms: token t37 arrives, dropped
-00025004.505ms: p10 arrives, needs 3 tokens, inter-arrival time = 5970.232ms
-00025004.505ms: p10 enters Q1
-00025440.478ms: token t38 arrives, dropped
-00025440.494ms: p10 leaves Q1, time in Q1 = 435.989ms, token bucket now has 0 token
-00025440.503ms: p10 enters Q2
-00025440.853ms: p10 leaves Q2, time in Q2 = 0.350ms
-00025440.860ms: p10 begins service at S1, requesting 1555ms of service
-00026084.851ms: p8 departs from S2, service time = 8008.956ms, time in system = 8027.868ms
-00026999.982ms: p10 departs from S1, service time = 1559.122ms, time in system = 1995.477ms
-00027000.085ms: emulation ends
+00000231.526ms: p1 arrives, needs 3 tokens, inter-arrival time = 231.526ms
+00000231.526ms: p1 enters Q1
+00000668.688ms: token t1 arrives, token bucket now has 1 token
+00001339.533ms: token t2 arrives, token bucket now has 2 tokens
+00002010.398ms: token t3 arrives, token bucket now has 3 tokens
+00002010.409ms: p1 leaves Q1, time in Q1 = 1778.883ms, token bucket now has 0 token
+00002010.418ms: p1 enters Q2
+00002011.305ms: p1 leaves Q2, time in Q2 = 0.887ms
+00002011.313ms: p1 begins service at S2, requesting 153ms of service
+00002168.881ms: p1 departs from S2, service time = 157.568ms, time in system = 1937.355ms
+00002423.764ms: p2 arrives, needs 1 tokens, inter-arrival time = 2192.238ms
+00002423.764ms: p2 enters Q1
+00002681.739ms: token t4 arrives, token bucket now has 1 token
+00002681.755ms: p2 leaves Q1, time in Q1 = 257.991ms, token bucket now has 0 token
+00002681.764ms: p2 enters Q2
+00002682.220ms: p2 leaves Q2, time in Q2 = 0.456ms
+00002682.223ms: p2 begins service at S2, requesting 3741ms of service
+00003351.214ms: token t5 arrives, token bucket now has 1 token
+00004022.929ms: token t6 arrives, token bucket now has 2 tokens
+00004694.619ms: token t7 arrives, token bucket now has 3 tokens
+00004778.811ms: p3 arrives, needs 2 tokens, inter-arrival time = 2355.047ms
+00004778.811ms: p3 enters Q1
+00005366.327ms: token t8 arrives, dropped
+00005366.343ms: p3 leaves Q1, time in Q1 = 587.532ms, token bucket now has 1 token
+00005366.352ms: p3 enters Q2
+00005367.603ms: p3 leaves Q2, time in Q2 = 1.251ms
+00005367.608ms: p3 begins service at S1, requesting 228ms of service
+00005596.524ms: p3 departs from S1, service time = 228.916ms, time in system = 817.713ms
+00006033.806ms: token t9 arrives, token bucket now has 2 tokens
+00006424.496ms: p2 departs from S2, service time = 3742.273ms, time in system = 4000.732ms
+00006433.229ms: p4 arrives, needs 4 tokens, inter-arrival time = 1654.42ms, dropped
+00006704.239ms: token t10 arrives, token bucket now has 3 tokens
+00007371.796ms: token t11 arrives, dropped
+00008038.833ms: token t12 arrives, dropped
+00008188.657ms: p5 arrives, needs 6 tokens, inter-arrival time = 1755.43ms, dropped
+00008303.868ms: p6 arrives, needs 7 tokens, inter-arrival time = 115.211ms, dropped
+00008707.783ms: token t13 arrives, dropped
+00009377.523ms: token t14 arrives, dropped
+00009824.905ms: p7 arrives, needs 1 tokens, inter-arrival time = 1521.037ms
+00009824.905ms: p7 enters Q1
+00010048.590ms: token t15 arrives, dropped
+00010048.604ms: p7 leaves Q1, time in Q1 = 223.699ms, token bucket now has 2 tokens
+00010048.619ms: p7 enters Q2
+00010049.839ms: p7 leaves Q2, time in Q2 = 1.220ms
+00010049.846ms: p7 begins service at S2, requesting 5437ms of service
+00010720.305ms: token t16 arrives, token bucket now has 3 tokens
+00011388.813ms: token t17 arrives, dropped
+00012055.896ms: token t18 arrives, dropped
+00012727.618ms: token t19 arrives, dropped
+00013394.326ms: token t20 arrives, dropped
+00014066.012ms: token t21 arrives, dropped
+00014733.692ms: token t22 arrives, dropped
+00015405.396ms: token t23 arrives, dropped
+00015488.147ms: p7 departs from S2, service time = 5438.301ms, time in system = 5663.242ms
+00016076.839ms: token t24 arrives, dropped
+00016745.534ms: token t25 arrives, dropped
+00017414.662ms: token t26 arrives, dropped
+00018061.749ms: p8 arrives, needs 2 tokens, inter-arrival time = 8236.844ms
+00018061.749ms: p8 enters Q1
+00018085.806ms: token t27 arrives, dropped
+00018085.814ms: p8 leaves Q1, time in Q1 = 24.065ms, token bucket now has 1 token
+00018085.822ms: p8 enters Q2
+00018086.627ms: p8 leaves Q2, time in Q2 = 0.805ms
+00018086.634ms: p8 begins service at S1, requesting 8007ms of service
+00018754.782ms: token t28 arrives, token bucket now has 2 tokens
+00019040.311ms: p9 arrives, needs 4 tokens, inter-arrival time = 978.562ms, dropped
+00019426.481ms: token t29 arrives, token bucket now has 3 tokens
+00020095.231ms: token t30 arrives, dropped
+00020764.853ms: token t31 arrives, dropped
+00021432.184ms: token t32 arrives, dropped
+00022103.880ms: token t33 arrives, dropped
+00022775.606ms: token t34 arrives, dropped
+00023445.921ms: token t35 arrives, dropped
+00024116.916ms: token t36 arrives, dropped
+00024788.602ms: token t37 arrives, dropped
+00025007.901ms: p10 arrives, needs 3 tokens, inter-arrival time = 5967.590ms
+00025007.901ms: p10 enters Q1
+00025456.832ms: token t38 arrives, dropped
+00025456.846ms: p10 leaves Q1, time in Q1 = 448.945ms, token bucket now has 0 token
+00025456.856ms: p10 enters Q2
+00025457.190ms: p10 leaves Q2, time in Q2 = 0.334ms
+00025457.195ms: p10 begins service at S2, requesting 1555ms of service
+00026098.523ms: p8 departs from S1, service time = 8011.889ms, time in system = 8036.774ms
+00027017.237ms: p10 departs from S2, service time = 1560.042ms, time in system = 2009.336ms
+00027017.348ms: emulation ends
 
 Statistics:
-	average packet inter-arrival time = 2.50045
-	average packet service time = 3.19038
-	average number of packets in Q1 = 0.122443
-	average number of packets in Q2 = 0.000135814
-	average number of packets at S1 = 0.196393
-	average number of packets at S2 = 0.512576
-	average time a packet spent in system = 3.74202
-	standard deviation for time spent in system = 2.48198
+
+	average packet inter-arrival time = 2.50079
+	average packet service time = 3.18983
+
+	average number of packets in Q1 = 0.122925
+	average number of packets in Q2 = 0.000183327
+	average number of packets at S1 = 0.305019
+	average number of packets at S2 = 0.403377
+
+	average time a packet spent in system = 3.74419
+	standard deviation for time spent in system = 2.48373
+
 	token drop probability = 0.684211
 	packet drop probability = 0.4
