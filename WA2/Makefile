@@ -17,7 +17,7 @@ my402list.o: my402list.c my402list.h
 	gcc -g -c -Wall my402list.c
 
 clean:
-	rm -f *.o warmup2 *.submitted
+	rm -f *.o warmup2
 
 backup:
 	# only backup "my402list.c" since this Makefile is for part (A) of the grading guidelines
