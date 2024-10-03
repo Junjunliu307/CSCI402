@@ -1,0 +1,118 @@
+
+==== Packets ====
+p1: inter-arrival time should be 402.418ms
+    time in Q1 should be 400.439ms
+    time in Q2 should be 1.162ms
+    should request 1429ms of service time
+    time in S2 should be 1436.909ms
+    time in system should be 1838.562ms
+
+p2: inter-arrival time should be 404.553ms
+    time in Q1 should be 800.764ms
+    time in Q2 should be 1.086ms
+    should request 1429ms of service time
+    time in S1 should be 1430.715ms
+    time in system should be 2232.611ms
+
+p3: inter-arrival time should be 401.624ms
+    time in Q1 should be 1208.756ms
+    time in Q2 should be 1.489ms
+    should request 1429ms of service time
+    time in S2 should be 1437.997ms
+    time in system should be 2648.256ms
+
+p4: inter-arrival time should be 408.985ms
+    time in Q1 should be 1614.325ms
+    time in Q2 should be 1.507ms
+    should request 1429ms of service time
+    time in S1 should be 1438.009ms
+    time in system should be 3053.854ms
+
+p5: inter-arrival time should be 405.248ms
+    time in Q1 should be 2011.165ms
+    time in Q2 should be 1.385ms
+    should request 1429ms of service time
+    time in S2 should be 1438.009ms
+    time in system should be 3450.577ms
+
+p6: inter-arrival time should be 403.378ms
+    time in Q1 should be 2414.038ms
+    time in Q2 should be 1.480ms
+    should request 1429ms of service time
+    time in S1 should be 1432.588ms
+    time in system should be 3848.121ms
+
+p7: inter-arrival time should be 401.846ms
+    time in Q1 should be 2823.138ms
+    time in Q2 should be 0.742ms
+    should request 1429ms of service time
+    time in S2 should be 1434.379ms
+    time in system should be 4258.274ms
+
+p8: inter-arrival time should be 403.066ms
+    time in Q1 should be 3233.211ms
+    time in Q2 should be 1.054ms
+    should request 1429ms of service time
+    time in S1 should be 1436.417ms
+    time in system should be 4670.697ms
+
+p9: inter-arrival time should be 400.886ms
+    time in Q1 should be 3644.883ms
+    time in Q2 should be 0.478ms
+    should request 1429ms of service time
+    time in S2 should be 1437.722ms
+    time in system should be 5083.106ms
+
+p10: inter-arrival time should be 408.341ms
+    time in Q1 should be 4045.459ms
+    time in Q2 should be 1.483ms
+    should request 1429ms of service time
+    time in S1 should be 1433.186ms
+    time in system should be 5480.142ms
+
+p11: inter-arrival time should be 404.368ms
+    time in Q1 should be 4456.910ms
+    time in Q2 should be 1.478ms
+    should request 1429ms of service time
+    time in S2 should be 1435.084ms
+    time in system should be 5893.497ms
+
+p12: inter-arrival time should be 406.008ms
+    time in Q1 should be 4860.952ms
+    time in Q2 should be 1.509ms
+    should request 1429ms of service time
+    time in S1 should be 1438.018ms
+    time in system should be 6300.493ms
+
+p13: inter-arrival time should be 410.049ms
+    time in Q1 should be 5266.890ms
+    time in Q2 should be 0.751ms
+    should request 1429ms of service time
+    time in S2 should be 1433.433ms
+    time in system should be 6701.089ms
+
+p14: inter-arrival time should be 404.673ms
+    time in Q1 should be 5678.217ms
+    time in Q2 should be 1.060ms
+    should request 1429ms of service time
+    time in S1 should be 1435.898ms
+    time in system should be 7115.192ms
+
+p15: inter-arrival time should be 405.762ms
+    time in Q1 should be 6085.600ms
+    time in Q2 should be 1.306ms
+    should request 1429ms of service time
+    time in S2 should be 1435.800ms
+    time in system should be 7522.900ms
+
+==== Statistics ====
+average packet inter-arrival time = 0.404747
+average packet service time = 1.43561093333333
+average number of packets in Q1 = 3.57098593563409
+average number of packets in Q2 = 0.00132188591411022
+average number of packets in S1 = 0.738904875265315
+average number of packets in S2 = 0.845163464397427
+average time a packet spent in system = 4.67315806666667
+standard deviation for time spent in system = 1.75527573370376
+token drop probability = 0
+packet drop probability = 0

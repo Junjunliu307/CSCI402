@@ -7,9 +7,8 @@
 #include <getopt.h>
 #include <math.h>
 #include <stdint.h>  
+#include <signal.h>
 #include "my402list.h"
-
-#define MAX_PACKETS 10000  // Example limit
 
 double total_inter_arrival_time = 0.0;
 double total_service_time = 0.0;
@@ -61,18 +60,27 @@ char tracefile[256] = {0};
 
 // Emulation start time
 struct timeval emulation_start;
-int is_emulation_finished = 0;  // 标志仿真是否结束
+struct timeval emulation_end;
+int is_emulation_finished = 0;
 
 // Function prototypes
 void *packet_arrival_thread(void *param);
 void *token_deposit_thread(void *param);
 void *server_thread(void *param);
 void parse_trace_file(const char *filename);
+void *parse_trace_file_thread(void *param);
 double get_elapsed_time_in_ms(struct timeval *start, struct timeval *end);
 void print_statistics();
 
-int main(int argc, char *argv[]) {
+void *sigint_handler_thread(void *arg);
+void remove_packets_from_queue(My402List *queue);
 
+// Thread
+pthread_t packet_thread, token_thread, server1, server2, sigint_thread;
+sigset_t set;
+
+int main(int argc, char *argv[]) {
+    // 解析命令行参数
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-lambda") == 0 && i + 1 < argc) {
             lambda = atof(argv[i + 1]);
@@ -102,42 +110,65 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Initialize queues
+    // 初始化队列
     if (My402ListInit(&Q1) != 1 || My402ListInit(&Q2) != 1) {
         fprintf(stderr, "Failed to initialize queues\n");
         exit(EXIT_FAILURE);
     }
 
-    // Get the start time for the emulation
+    // 获取仿真开始时间
     gettimeofday(&emulation_start, NULL);
 
-    // Print emulation parameters
-    printf("Emulation Parameters:\n");
-    printf("number to arrive = %d\n", num_packets);
-    if (deterministic_mode) {
-        printf("lambda = %.6g\n", lambda);
-        printf("mu = %.6g\n", mu);
-    }
-    printf("r = %.6g\n", r);
-    printf("B = %d\n", B);
-    printf("P = %d\n", P);
-    if (!deterministic_mode) {
-        printf("tsfile = %s\n", tracefile);
-    }
-
-    // If trace file is provided, parse it
+    // 解析 trace 文件（如果有）
     if (!deterministic_mode) {
         parse_trace_file(tracefile);
     }
 
+    // 打印仿真参数
+    printf("Emulation Parameters:\n");
+    printf("    number to arrive = %d\n", num_packets);
+    if (deterministic_mode) {
+        printf("    lambda = %.6g\n", lambda);
+        printf("    mu = %.6g\n", mu);
+    }
+    printf("    r = %.6g\n", r);
+    printf("    B = %d\n", B);
+    printf("    P = %d\n", P);
+    if (!deterministic_mode) {
+        printf("    tsfile = %s\n", tracefile);
+    }
+
     printf("%08d.%03dms: emulation begins\n", 0, 0);
 
-    pthread_t packet_thread, token_thread, server1, server2;
+    // 设置信号屏蔽集以包含 SIGINT
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+    if (pthread_sigmask(SIG_BLOCK, &set, NULL) != 0) {
+        perror("pthread_sigmask failed");
+        exit(1);
+    }
 
-    // Create threads
-    if (pthread_create(&packet_thread, NULL, packet_arrival_thread, NULL) != 0) {
-        perror("Failed to create packet thread");
+    // 创建 SIGINT 捕获线程
+    if (pthread_create(&sigint_thread, NULL, sigint_handler_thread, (void*)&set) != 0) {
+        perror("Failed to create SIGINT handler thread");
         exit(EXIT_FAILURE);
+    }
+
+    // 创建其他线程
+    // if (pthread_create(&packet_thread, NULL, packet_arrival_thread, NULL) != 0) {
+    //     perror("Failed to create packet thread");
+    //     exit(EXIT_FAILURE);
+    // }
+    if (deterministic_mode) {
+        if (pthread_create(&packet_thread, NULL, packet_arrival_thread, NULL) != 0) {
+            perror("Failed to create packet thread");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        if (pthread_create(&packet_thread, NULL, parse_trace_file_thread, (void*)tracefile) != 0) {
+            perror("Failed to create parse trace file thread");
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (pthread_create(&token_thread, NULL, token_deposit_thread, NULL) != 0) {
@@ -145,7 +176,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // 使用 (void *)(intptr_t) 来传递整数值
     if (pthread_create(&server1, NULL, server_thread, (void *)(intptr_t)1) != 0) {
         perror("Failed to create server 1 thread");
         exit(EXIT_FAILURE);
@@ -156,25 +186,29 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Wait for packet thread to complete (all packets are generated)
+    // 等待数据包到达线程完成
     pthread_join(packet_thread, NULL);
 
-    // After packet thread completes, mark emulation as finished
+    // 数据包到达线程完成后标记仿真结束
     pthread_mutex_lock(&queue_lock);
     is_emulation_finished = 1; 
     pthread_mutex_unlock(&queue_lock);
 
-    // Wait for the other threads to complete
+    // 等待其他线程完成
     pthread_join(token_thread, NULL);
     pthread_join(server1, NULL);
     pthread_join(server2, NULL);
+    // pthread_join(sigint_thread, NULL);
 
-    printf("%08d.%03dms: emulation ends\n", 0, 0);
+    // 获取仿真结束时间并输出结束信息
+    gettimeofday(&emulation_end, NULL);
+    double termination_time_ms = get_elapsed_time_in_ms(&emulation_start, &emulation_end);
+    printf("%012.3fms: emulation ends\n", termination_time_ms);
 
     // 打印统计信息
     print_statistics();
 
-    // Cleanup
+    // 清理资源
     pthread_mutex_destroy(&token_lock);
     pthread_mutex_destroy(&queue_lock);
     My402ListUnlinkAll(&Q1);
@@ -195,6 +229,7 @@ void *packet_arrival_thread(void *param) {
         }
         packet->id = i;
         packet->tokens_needed = P;
+        packet->service_time_ms = 1000 / mu;
         gettimeofday(&packet->arrival_time, NULL);
 
         double inter_arrival_time = get_elapsed_time_in_ms(&last_arrival_time, &packet->arrival_time);
@@ -203,7 +238,15 @@ void *packet_arrival_thread(void *param) {
         total_inter_arrival_time += inter_arrival_time;
         total_packets_arrived++;
 
-        printf("%08.3fms: p%d arrives, needs %d tokens, inter-arrival time = %.3fms\n",
+        if (packet->tokens_needed > B) {
+            total_packets_dropped++;
+            printf("%012.3fms: p%d arrives, needs %d tokens, inter-arrival time = %.6gms, dropped\n",
+                   get_elapsed_time_in_ms(&emulation_start, &packet->arrival_time),
+                   packet->id, packet->tokens_needed, inter_arrival_time);
+            free(packet);
+            continue;
+        }
+        printf("%012.3fms: p%d arrives, needs %d tokens, inter-arrival time = %.3fms\n",
                get_elapsed_time_in_ms(&emulation_start, &packet->arrival_time), i, P, inter_arrival_time);
 
         pthread_mutex_lock(&queue_lock);
@@ -212,7 +255,7 @@ void *packet_arrival_thread(void *param) {
             pthread_mutex_unlock(&queue_lock);
             exit(EXIT_FAILURE);
         }
-        printf("%08.3fms: p%d enters Q1\n", get_elapsed_time_in_ms(&emulation_start, &packet->arrival_time), i);
+        printf("%012.3fms: p%d enters Q1\n", get_elapsed_time_in_ms(&emulation_start, &packet->arrival_time), i);
         pthread_mutex_unlock(&queue_lock);
     }
     return NULL;
@@ -220,7 +263,7 @@ void *packet_arrival_thread(void *param) {
 
 void *token_deposit_thread(void *param) {
     int token_id = 1;
-    while (!is_emulation_finished) {
+    while (!is_emulation_finished || !My402ListEmpty(&Q1)) {
         usleep((useconds_t)(1.0 / r * 1000000));
 
         pthread_mutex_lock(&token_lock);
@@ -229,12 +272,13 @@ void *token_deposit_thread(void *param) {
             tokens++;
             struct timeval token_arrival_time;
             gettimeofday(&token_arrival_time, NULL);
-            printf("%08.3fms: token t%d arrives, token bucket now has %d tokens\n",
-                   get_elapsed_time_in_ms(&emulation_start, &token_arrival_time), token_id++, tokens);
+            printf("%012.3fms: token t%d arrives, token bucket now has %d %s\n",
+                get_elapsed_time_in_ms(&emulation_start, &token_arrival_time), token_id++, tokens,
+                tokens > 1 ? "tokens" : "token");
         } else {
             struct timeval token_arrival_time;
             gettimeofday(&token_arrival_time, NULL);
-            printf("%08.3fms: token t%d arrives, dropped\n",
+            printf("%012.3fms: token t%d arrives, dropped\n",
                    get_elapsed_time_in_ms(&emulation_start, &token_arrival_time), token_id++);
             total_tokens_dropped++;
         }
@@ -250,18 +294,22 @@ void *token_deposit_thread(void *param) {
                 struct timeval leave_Q1_time;
                 gettimeofday(&leave_Q1_time, NULL);
                 My402ListUnlink(&Q1, elem);
+                total_time_in_Q1 += get_elapsed_time_in_ms(&packet->arrival_time, &leave_Q1_time);
+
                 if (My402ListAppend(&Q2, packet) != 1) {
                     fprintf(stderr, "Failed to append packet to Q2\n");
                     pthread_mutex_unlock(&queue_lock);
                     exit(EXIT_FAILURE);
                 }
-                total_time_in_Q1 += get_elapsed_time_in_ms(&packet->arrival_time, &leave_Q1_time);  // 记录在Q1的时间
-                printf("%08.3fms: p%d leaves Q1, time in Q1 = %.3fms, token bucket now has %d tokens\n",
-                       get_elapsed_time_in_ms(&emulation_start, &leave_Q1_time),
-                       packet->id, get_elapsed_time_in_ms(&packet->arrival_time, &leave_Q1_time), tokens);
-                printf("%08.3fms: p%d enters Q2\n", get_elapsed_time_in_ms(&emulation_start, &leave_Q1_time), packet->id);
+                printf("%012.3fms: p%d leaves Q1, time in Q1 = %.3fms, token bucket now has %d %s\n",
+                    get_elapsed_time_in_ms(&emulation_start, &leave_Q1_time),
+                    packet->id, get_elapsed_time_in_ms(&packet->arrival_time, &leave_Q1_time),
+                    tokens, tokens > 1 ? "tokens" : "token");
+
+                gettimeofday(&packet->enter_Q2_time, NULL);
+                printf("%012.3fms: p%d enters Q2\n", get_elapsed_time_in_ms(&emulation_start, &packet->enter_Q2_time), packet->id);
             } else {
-                total_packets_dropped++;
+                // total_packets_dropped++;
                 break;
             }
         }
@@ -272,16 +320,24 @@ void *token_deposit_thread(void *param) {
 
 void *server_thread(void *param) {
     intptr_t server_id = (intptr_t)param;
-    while (!is_emulation_finished || !My402ListEmpty(&Q2)) {
+    while (!is_emulation_finished || !My402ListEmpty(&Q2) || !My402ListEmpty(&Q1)) {
         pthread_mutex_lock(&queue_lock);
         if (!My402ListEmpty(&Q2)) {
             My402ListElem *elem = My402ListFirst(&Q2);
             Packet *packet = (Packet *)elem->obj;
             My402ListUnlink(&Q2, elem);
 
+            struct timeval leave_Q2_time;
+            gettimeofday(&leave_Q2_time, NULL);
+
+            total_time_in_Q2 += get_elapsed_time_in_ms(&packet->enter_Q2_time, &leave_Q2_time);
+            printf("%012.3fms: p%d leaves Q2, time in Q2 = %.3fms\n",
+                get_elapsed_time_in_ms(&emulation_start, &leave_Q2_time),
+                packet->id,
+                get_elapsed_time_in_ms(&packet->enter_Q2_time, &leave_Q2_time));
             struct timeval begin_service_time;
             gettimeofday(&begin_service_time, NULL);
-            printf("%08.3fms: p%d begins service at S%ld, requesting %dms of service\n",
+            printf("%012.3fms: p%d begins service at S%ld, requesting %dms of service\n",
                    get_elapsed_time_in_ms(&emulation_start, &begin_service_time),
                    packet->id, (long)server_id, packet->service_time_ms);
 
@@ -290,7 +346,19 @@ void *server_thread(void *param) {
             usleep(packet->service_time_ms * 1000);
             struct timeval depart_time;
             gettimeofday(&depart_time, NULL);
-            printf("%08.3fms: p%d departs from S%ld, service time = %.3fms, time in system = %.3fms\n",
+
+            double time_in_system = get_elapsed_time_in_ms(&packet->arrival_time, &depart_time);
+            total_time_in_system += time_in_system;
+            total_system_time_squared += time_in_system * time_in_system;
+
+            total_packets_served ++;
+            total_service_time += get_elapsed_time_in_ms(&begin_service_time, &depart_time);
+            if (server_id == 1){
+                total_time_in_S1 += get_elapsed_time_in_ms(&begin_service_time, &depart_time);
+            }else{
+                total_time_in_S2 += get_elapsed_time_in_ms(&begin_service_time, &depart_time);
+            }
+            printf("%012.3fms: p%d departs from S%ld, service time = %.3fms, time in system = %.3fms\n",
                    get_elapsed_time_in_ms(&emulation_start, &depart_time),
                    packet->id, (long)server_id,
                    get_elapsed_time_in_ms(&begin_service_time, &depart_time),
@@ -299,7 +367,7 @@ void *server_thread(void *param) {
             free(packet);
         } else {
             pthread_mutex_unlock(&queue_lock);
-            usleep(1000);  // 如果没有包可处理，线程短暂休眠
+            usleep(1000);
         }
     }
     return NULL;
@@ -315,6 +383,48 @@ void parse_trace_file(const char *filename) {
 
     int num_packets_from_trace;
     fscanf(file, "%d", &num_packets_from_trace);
+    num_packets = num_packets_from_trace;
+
+    // for (int i = 1; i <= num_packets_from_trace; i++) {
+    //     int inter_arrival_time_ms, tokens_needed, service_time_ms;
+    //     if (fscanf(file, "%d%d%d", &inter_arrival_time_ms, &tokens_needed, &service_time_ms) != 3) {
+    //         fprintf(stderr, "Error reading trace file on line %d\n", i + 1);
+    //         exit(EXIT_FAILURE);
+    //     }
+
+    //     usleep(inter_arrival_time_ms * 1000);
+
+    //     Packet *packet = (Packet *)malloc(sizeof(Packet));
+    //     packet->id = i;
+    //     packet->tokens_needed = tokens_needed;
+    //     packet->service_time_ms = service_time_ms;
+    //     gettimeofday(&packet->arrival_time, NULL);
+
+    //     pthread_mutex_lock(&queue_lock);
+    //     My402ListAppend(&Q1, packet);
+    //     pthread_mutex_unlock(&queue_lock);
+    // }
+
+    fclose(file);
+}
+
+void *parse_trace_file_thread(void *param) {
+    const char *filename = (const char *)param;
+
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Error opening trace file");
+        exit(EXIT_FAILURE);
+    }
+
+    int num_packets_from_trace;
+    if (fscanf(file, "%d", &num_packets_from_trace) != 1) {
+        fprintf(stderr, "Error reading the number of packets from trace file\n");
+        exit(EXIT_FAILURE);
+    }
+    num_packets = num_packets_from_trace;
+
+    struct timeval last_arrival_time = emulation_start;
 
     for (int i = 1; i <= num_packets_from_trace; i++) {
         int inter_arrival_time_ms, tokens_needed, service_time_ms;
@@ -323,51 +433,79 @@ void parse_trace_file(const char *filename) {
             exit(EXIT_FAILURE);
         }
 
+        // 模拟数据包的到达间隔
         usleep(inter_arrival_time_ms * 1000);
 
         Packet *packet = (Packet *)malloc(sizeof(Packet));
+        if (!packet) {
+            fprintf(stderr, "Memory allocation failed for packet %d\n", i);
+            exit(EXIT_FAILURE);
+        }
         packet->id = i;
         packet->tokens_needed = tokens_needed;
         packet->service_time_ms = service_time_ms;
         gettimeofday(&packet->arrival_time, NULL);
 
+        double inter_arrival_time = get_elapsed_time_in_ms(&last_arrival_time, &packet->arrival_time);
+        last_arrival_time = packet->arrival_time;
+
+        total_inter_arrival_time += inter_arrival_time;
+        total_packets_arrived++;
+
+        // 检查数据包所需的令牌数量是否超过桶的最大容量 B
+        if (packet->tokens_needed > B) {
+            total_packets_dropped++;
+            printf("%012.3fms: p%d arrives, needs %d tokens, inter-arrival time = %.6gms, dropped\n",
+                   get_elapsed_time_in_ms(&emulation_start, &packet->arrival_time),
+                   packet->id, packet->tokens_needed, inter_arrival_time);
+            free(packet);
+            continue;
+        }
+
+        printf("%012.3fms: p%d arrives, needs %d tokens, inter-arrival time = %.3fms\n",
+               get_elapsed_time_in_ms(&emulation_start, &packet->arrival_time), i, tokens_needed, inter_arrival_time);
+
+        // 插入到 Q1 队列
         pthread_mutex_lock(&queue_lock);
-        My402ListAppend(&Q1, packet);
+        if (My402ListAppend(&Q1, packet) != 1) {
+            fprintf(stderr, "Failed to append packet to Q1\n");
+            pthread_mutex_unlock(&queue_lock);
+            exit(EXIT_FAILURE);
+        }
+        printf("%012.3fms: p%d enters Q1\n", get_elapsed_time_in_ms(&emulation_start, &packet->arrival_time), i);
         pthread_mutex_unlock(&queue_lock);
     }
 
     fclose(file);
+    return NULL;
 }
 
-// 打印统计信息
 void print_statistics() {
     printf("\nStatistics:\n");
 
-    // 平均包到达时间
     if (total_packets_arrived > 1) {
-        printf("\taverage packet inter-arrival time = %.6g\n", total_inter_arrival_time / (total_packets_arrived - 1));
+        printf("\taverage packet inter-arrival time = %.6g\n", (total_inter_arrival_time / (total_packets_arrived)) / 1000.0);
     } else {
         printf("\taverage packet inter-arrival time = N/A (no packets arrived)\n");
     }
 
-    // 平均包服务时间
     if (total_packets_served > 0) {
-        printf("\taverage packet service time = %.6g\n", total_service_time / total_packets_served);
+        printf("\taverage packet service time = %.6g\n", (total_service_time / total_packets_served) / 1000.0);
     } else {
         printf("\taverage packet service time = N/A (no packets served)\n");
     }
 
-    // 平均Q1、Q2、S1、S2中的包数
-    double emulation_time = get_elapsed_time_in_ms(&emulation_start, &(struct timeval){0});
-    printf("\taverage number of packets in Q1 = %.6g\n", total_time_in_Q1 / emulation_time);
-    printf("\taverage number of packets in Q2 = %.6g\n", total_time_in_Q2 / emulation_time);
-    printf("\taverage number of packets at S1 = %.6g\n", total_time_in_S1 / emulation_time);
-    printf("\taverage number of packets at S2 = %.6g\n", total_time_in_S2 / emulation_time);
+    gettimeofday(&emulation_end, NULL);
+    double emulation_time = get_elapsed_time_in_ms(&emulation_start, &emulation_end) / 1000.0;
 
-    // 包在系统中的平均时间和标准差
+    printf("\taverage number of packets in Q1 = %.6g\n", total_time_in_Q1 / (emulation_time * 1000.0));
+    printf("\taverage number of packets in Q2 = %.6g\n", total_time_in_Q2 / (emulation_time * 1000.0));
+    printf("\taverage number of packets at S1 = %.6g\n", total_time_in_S1 / (emulation_time * 1000.0));
+    printf("\taverage number of packets at S2 = %.6g\n", total_time_in_S2 / (emulation_time * 1000.0));
+
     if (total_packets_served > 0) {
-        double avg_time_in_system = total_time_in_system / total_packets_served;
-        double variance = (total_system_time_squared / total_packets_served) - (avg_time_in_system * avg_time_in_system);
+        double avg_time_in_system = (total_time_in_system / total_packets_served) / 1000.0;
+        double variance = ((total_system_time_squared / total_packets_served) / 1000000.0) - (avg_time_in_system * avg_time_in_system);
         double stddev = sqrt(variance);
         printf("\taverage time a packet spent in system = %.6g\n", avg_time_in_system);
         printf("\tstandard deviation for time spent in system = %.6g\n", stddev);
@@ -376,14 +514,12 @@ void print_statistics() {
         printf("\tstandard deviation for time spent in system = N/A\n");
     }
 
-    // 令牌丢弃概率
     if (total_tokens_generated > 0) {
         printf("\ttoken drop probability = %.6g\n", (double)total_tokens_dropped / total_tokens_generated);
     } else {
         printf("\ttoken drop probability = N/A (no tokens generated)\n");
     }
 
-    // 包丢弃概率
     if (total_packets_arrived > 0) {
         printf("\tpacket drop probability = %.6g\n", (double)total_packets_dropped / total_packets_arrived);
     } else {
@@ -391,7 +527,55 @@ void print_statistics() {
     }
 }
 
-// 计算时间间隔
+
 double get_elapsed_time_in_ms(struct timeval *start, struct timeval *end) {
     return (double)(end->tv_sec - start->tv_sec) * 1000.0 + (double)(end->tv_usec - start->tv_usec) / 1000.0;
+}
+
+// 信号捕获线程函数
+void* sigint_handler_thread(void* arg) {
+    int sig;
+
+    // 使用 sigwait 等待 SIGINT 信号
+    if (sigwait(&set, &sig) != 0) {
+        perror("sigwait failed");
+        exit(1);
+    }
+
+    // SIGINT 被捕获，开始处理终止逻辑
+    printf("\nSIGINT caught, no new packets or tokens will be allowed\n");
+
+    // 标记仿真结束
+    is_emulation_finished = 1;
+
+    // 停止数据包到达线程和令牌生成线程
+    pthread_cancel(packet_thread);
+    pthread_cancel(token_thread);
+
+    // 清空 Q1 和 Q2 中的数据包
+    pthread_mutex_lock(&queue_lock);
+    remove_packets_from_queue(&Q1);
+    remove_packets_from_queue(&Q2);
+    pthread_mutex_unlock(&queue_lock);
+
+    // 等待服务器线程完成当前服务的数据包
+    pthread_cancel(server1);
+    pthread_cancel(server2);
+
+    // 输出统计信息
+    print_statistics();
+
+    // 退出程序
+    exit(0);
+}
+
+// 清空队列并打印信息的函数
+void remove_packets_from_queue(My402List* queue) {
+    while (!My402ListEmpty(queue)) {
+        My402ListElem *elem = My402ListFirst(queue);
+        Packet *packet = (Packet *)elem->obj;
+        My402ListUnlink(queue, elem);
+        printf("p%d removed from queue\n", packet->id);
+        free(packet);
+    }
 }
